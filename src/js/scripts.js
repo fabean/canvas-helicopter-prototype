@@ -2,9 +2,28 @@
 
 let c,
     ctx,
-    fps = 60;
+    fps = 60,
+    dot = {
+      color: 'white',
+      x: 20,
+      y: 295,
+      speed: {
+        x: 5,
+        y: 5
+      },
+      width: 10,
+      height: 10
+    },
+    keysDown = {},
+    path = [],
+    startScreen = false;
 
-window.requestAnimFrame = (function(){
+
+const CANVAS_HEIGHT = '600',
+      CANVAS_WIDTH = '800',
+      PATH_WIDTH = 20;
+
+let requestAnimFrame = (function(){
   return  window.requestAnimationFrame       ||
           window.webkitRequestAnimationFrame ||
           window.mozRequestAnimationFrame    ||
@@ -13,23 +32,63 @@ window.requestAnimFrame = (function(){
           };
 })();
 
-let render = () => {
-  // all of your render code goes here
+
+let movePlayer = () => {
+  if (38 in keysDown) { // Player holding up
+    if (10 <= dot.y) {
+      dot.y += -(dot.speed.y);
+    }
+  }
+  if (40 in keysDown) { // Player holding down
+    if (c.height-10 >= dot.y) {
+      dot.y += dot.speed.y;
+    }
+  }
+  if (37 in keysDown) { // Player holding left
+    if (10 <= dot.x) {
+      dot.x += -(dot.speed.x);
+    }
+  }
+  if (39 in keysDown) { // Player holding right
+    if (c.width-10 >= dot.x) {
+      dot.x += dot.speed.x;
+    }
+  }
 };
 
-let animationLoop = () => {
-  requestAnimFrame(animationLoop);
-  render();
+let movePath = () => {
+  for (let i=0; i<path.length; i++) {
+    path[i].x -= 1;
+
+    // if the path is off screen we replace it
+    if (path[i].x === -PATH_WIDTH) {
+
+      let thisHeight = Math.floor(Math.random() * CANVAS_HEIGHT) + 50; // 50 is a min height?
+      // array.pop seems like [i] changes value so I'm just replacing the current path
+      path[i] = {
+        width: PATH_WIDTH,
+        height: thisHeight,
+        y: (CANVAS_HEIGHT/2 - thisHeight/2),
+        x: CANVAS_WIDTH,
+        color: 'black'
+      };
+
+    }
+  }
 };
 
-window.onload = ()  => {
-  c = document.getElementById('canvas');
-  c.width = window.innerWidth;
-  c.height = window.innerHeight;
+let calcCollision = () => {
+  // loop through path and see which one I'm current in
+  for (let i=0; i<path.length; i++) {
+    if (path[i].x < dot.x && path[i].x+PATH_WIDTH > dot.x) {
+      // this means this is the path youre currently in
 
-  ctx = c.getContext('2d');
-
-  animationLoop();
+      if (path[i].y > dot.y || path[i].height+path[i].y < dot.y) {
+        console.log('you collided');
+        startScreen = true;
+      }
+    }
+  }
 };
 
 // if you want to draw lots of circles you'll use this function
@@ -45,3 +104,90 @@ let drawRect = (rectangle) => {
   ctx.fillStyle = rectangle.color;
   ctx.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 };
+
+
+let render = () => {
+  if (startScreen) {
+    ctx.fillStyle = '#6F6';
+    ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_WIDTH);
+
+    ctx.fillStyle = 'black';
+    ctx.font = '20px Helvetica';
+    let message = 'You crashed!';
+    let messageTextWidth = ctx.measureText(message);
+    ctx.fillText(message, (CANVAS_WIDTH/2 - messageTextWidth.width/2), 200);
+    let message2 = 'Click to start again';
+    let messageTextWidth2 = ctx.measureText(message2);
+    ctx.fillText(message2, (CANVAS_WIDTH/2 - messageTextWidth2.width/2), 300);
+    return;
+  }
+  // all of your render code goes here
+
+  // first we will calculate player movement
+  movePlayer();
+
+  // move the path
+  movePath();
+
+  // was there a collision?
+  calcCollision();
+
+  // draw background
+  ctx.fillStyle = '#6F6';
+  ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_WIDTH);
+
+  for (let i=0; i<path.length; i++) {
+    drawRect(path[i]);
+  }
+
+  // helicopter
+  drawRect(dot);
+
+};
+
+
+let animationLoop = () => {
+  requestAnimFrame(animationLoop);
+  render();
+};
+
+let gameRestart = () => {
+  startScreen = false;
+  dot.x = 20;
+  dot.y = 295;
+};
+
+window.onload = ()  => {
+  c = document.getElementById('canvas');
+  c.width = CANVAS_WIDTH;
+  c.height = CANVAS_HEIGHT;
+
+  ctx = c.getContext('2d');
+
+  // Handle keyboard controls
+  addEventListener('keydown', function (e) {
+    keysDown[e.keyCode] = true;
+  }, false);
+  addEventListener('keyup', function (e) {
+    delete keysDown[e.keyCode];
+  }, false);
+  addEventListener('mousedown', gameRestart);
+
+  // generate inital path
+  for (let i=0; i<CANVAS_WIDTH/PATH_WIDTH+1; i++) {
+    let thisHeight = Math.floor(Math.random() * CANVAS_HEIGHT) + 50; // 50 is a min height?
+
+    let thisPath = {
+      width: PATH_WIDTH,
+      height: thisHeight,
+      y: (CANVAS_HEIGHT/2 - thisHeight/2),
+      x: i*PATH_WIDTH,
+      color: 'black'
+    };
+    path.push(thisPath);
+  }
+
+  animationLoop();
+};
+
+// let person = [Math.floor(Math.random() * winner.length)];
