@@ -16,7 +16,9 @@ var c = undefined,
 },
     keysDown = {},
     path = [],
-    startScreen = false;
+    startScreen = false,
+    timeStart = undefined,
+    timeEnd = undefined;
 
 var CANVAS_HEIGHT = '600',
     CANVAS_WIDTH = '800',
@@ -34,12 +36,13 @@ var movePlayer = function movePlayer() {
     if (10 <= dot.y) {
       dot.y += -dot.speed.y;
     }
-  }
-  if (40 in keysDown) {
+  } else if (40 in keysDown) {
     // Player holding down
     if (c.height - 10 >= dot.y) {
       dot.y += dot.speed.y;
     }
+  } else {
+    dot.y += 1.2;
   }
   if (37 in keysDown) {
     // Player holding left
@@ -103,22 +106,46 @@ var drawRect = function drawRect(rectangle) {
   ctx.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 };
 
-var render = function render() {
-  if (startScreen) {
-    ctx.fillStyle = '#6F6';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_WIDTH);
+var msToTime = function msToTime(duration) {
+  var seconds = parseInt(duration / 1000 % 60),
+      minutes = parseInt(duration / (1000 * 60) % 60);
 
-    ctx.fillStyle = 'black';
-    ctx.font = '20px Helvetica';
-    var message = 'You crashed!';
-    var messageTextWidth = ctx.measureText(message);
-    ctx.fillText(message, CANVAS_WIDTH / 2 - messageTextWidth.width / 2, 200);
-    var message2 = 'Click to start again';
-    var messageTextWidth2 = ctx.measureText(message2);
-    ctx.fillText(message2, CANVAS_WIDTH / 2 - messageTextWidth2.width / 2, 300);
+  minutes = minutes < 10 ? '0' + minutes : minutes;
+  seconds = seconds < 10 ? '0' + seconds : seconds;
+
+  return minutes + ':' + seconds;
+};
+
+var gameOver = function gameOver() {
+  ctx.fillStyle = '#6F6';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_WIDTH);
+
+  ctx.fillStyle = 'black';
+  ctx.font = '20px Helvetica';
+  var message = 'You crashed!';
+  var messageTextWidth = ctx.measureText(message);
+  ctx.fillText(message, CANVAS_WIDTH / 2 - messageTextWidth.width / 2, 200);
+
+  if (typeof timeEnd === 'undefined') {
+    timeEnd = performance.now();
+  }
+  var timeTakenInMs = timeEnd - timeStart;
+  var timeTaken = msToTime(timeTakenInMs);
+  var timeTakenMessage = 'You lasted: ' + timeTaken;
+  var timeTakenWidth = ctx.measureText(timeTakenMessage);
+  ctx.fillText(timeTakenMessage, CANVAS_WIDTH / 2 - timeTakenWidth.width / 2, 250);
+
+  var message2 = 'Click to start again';
+  var messageTextWidth2 = ctx.measureText(message2);
+  ctx.fillText(message2, CANVAS_WIDTH / 2 - messageTextWidth2.width / 2, 300);
+};
+
+var render = function render() {
+  // check to see if game is over
+  if (startScreen) {
+    gameOver();
     return;
   }
-  // all of your render code goes here
 
   // first we will calculate player movement
   movePlayer();
@@ -147,6 +174,8 @@ var animationLoop = function animationLoop() {
 };
 
 var gameRestart = function gameRestart() {
+  timeStart = performance.now();
+  timeEnd = undefined;
   startScreen = false;
   dot.x = 20;
   dot.y = 295;
@@ -181,6 +210,8 @@ window.onload = function () {
     };
     path.push(thisPath);
   }
+
+  timeStart = performance.now();
 
   animationLoop();
 };

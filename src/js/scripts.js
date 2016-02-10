@@ -16,7 +16,9 @@ let c,
     },
     keysDown = {},
     path = [],
-    startScreen = false;
+    startScreen = false,
+    timeStart,
+    timeEnd;
 
 
 const CANVAS_HEIGHT = '600',
@@ -39,10 +41,13 @@ let movePlayer = () => {
       dot.y += -(dot.speed.y);
     }
   }
-  if (40 in keysDown) { // Player holding down
+  else if (40 in keysDown) { // Player holding down
     if (c.height-10 >= dot.y) {
       dot.y += dot.speed.y;
     }
+  }
+  else {
+    dot.y += 1.2;
   }
   if (37 in keysDown) { // Player holding left
     if (10 <= dot.x) {
@@ -105,23 +110,47 @@ let drawRect = (rectangle) => {
   ctx.fillRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 };
 
+let msToTime = (duration) => {
+  let seconds = parseInt((duration/1000)%60),
+      minutes = parseInt((duration/(1000*60))%60);
+
+  minutes = (minutes < 10) ? '0' + minutes : minutes;
+  seconds = (seconds < 10) ? '0' + seconds : seconds;
+
+  return `${minutes}:${seconds}`;
+};
+
+let gameOver = () => {
+  ctx.fillStyle = '#6F6';
+  ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_WIDTH);
+
+  ctx.fillStyle = 'black';
+  ctx.font = '20px Helvetica';
+  let message = 'You crashed!';
+  let messageTextWidth = ctx.measureText(message);
+  ctx.fillText(message, (CANVAS_WIDTH/2 - messageTextWidth.width/2), 200);
+
+  if (typeof timeEnd === 'undefined') {
+    timeEnd = performance.now();
+  }
+  let timeTakenInMs = (timeEnd - timeStart);
+  let timeTaken = msToTime(timeTakenInMs);
+  let timeTakenMessage = `You lasted: ${timeTaken}`;
+  let timeTakenWidth = ctx.measureText(timeTakenMessage);
+  ctx.fillText(timeTakenMessage, (CANVAS_WIDTH/2 - timeTakenWidth.width/2), 250);
+
+  let message2 = 'Click to start again';
+  let messageTextWidth2 = ctx.measureText(message2);
+  ctx.fillText(message2, (CANVAS_WIDTH/2 - messageTextWidth2.width/2), 300);
+
+};
 
 let render = () => {
+  // check to see if game is over
   if (startScreen) {
-    ctx.fillStyle = '#6F6';
-    ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_WIDTH);
-
-    ctx.fillStyle = 'black';
-    ctx.font = '20px Helvetica';
-    let message = 'You crashed!';
-    let messageTextWidth = ctx.measureText(message);
-    ctx.fillText(message, (CANVAS_WIDTH/2 - messageTextWidth.width/2), 200);
-    let message2 = 'Click to start again';
-    let messageTextWidth2 = ctx.measureText(message2);
-    ctx.fillText(message2, (CANVAS_WIDTH/2 - messageTextWidth2.width/2), 300);
+    gameOver();
     return;
   }
-  // all of your render code goes here
 
   // first we will calculate player movement
   movePlayer();
@@ -152,6 +181,8 @@ let animationLoop = () => {
 };
 
 let gameRestart = () => {
+  timeStart = performance.now();
+  timeEnd = undefined;
   startScreen = false;
   dot.x = 20;
   dot.y = 295;
@@ -186,6 +217,8 @@ window.onload = ()  => {
     };
     path.push(thisPath);
   }
+
+  timeStart = performance.now();
 
   animationLoop();
 };
