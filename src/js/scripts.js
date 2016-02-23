@@ -21,8 +21,8 @@ let c,
     timeEnd;
 
 
-const CANVAS_HEIGHT = '600',
-      CANVAS_WIDTH = '800',
+const CANVAS_HEIGHT = window.innerHeight,
+      CANVAS_WIDTH = window.innerWidth,
       PATH_WIDTH = 20;
 
 let requestAnimFrame = (function(){
@@ -202,7 +202,16 @@ window.onload = ()  => {
   addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
   }, false);
-  addEventListener('mousedown', gameRestart);
+  addEventListener('mousedown', function (e) {
+    if (startScreen === true) {
+      gameRestart();
+    } else {
+     keysDown[38] = true;
+    }
+  });
+  addEventListener('mouseup', function (e) {
+    delete keysDown[38];
+  });
 
   // generate inital path
   for (let i=0; i<CANVAS_WIDTH/PATH_WIDTH+1; i++) {

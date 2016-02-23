@@ -20,8 +20,8 @@ var c = undefined,
     timeStart = undefined,
     timeEnd = undefined;
 
-var CANVAS_HEIGHT = '600',
-    CANVAS_WIDTH = '800',
+var CANVAS_HEIGHT = window.innerHeight,
+    CANVAS_WIDTH = window.innerWidth,
     PATH_WIDTH = 20;
 
 var requestAnimFrame = function () {
@@ -195,7 +195,16 @@ window.onload = function () {
   addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
   }, false);
-  addEventListener('mousedown', gameRestart);
+  addEventListener('mousedown', function (e) {
+    if (startScreen === true) {
+      gameRestart();
+    } else {
+      keysDown[38] = true;
+    }
+  });
+  addEventListener('mouseup', function (e) {
+    delete keysDown[38];
+  });
 
   // generate inital path
   for (var i = 0; i < CANVAS_WIDTH / PATH_WIDTH + 1; i++) {
